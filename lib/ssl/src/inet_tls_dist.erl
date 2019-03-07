@@ -101,7 +101,7 @@ do_setup(Driver, Kernel, Node, Type, MyNode, LongOrShortNames, SetupTime) ->
 			{ok, Socket} ->
 			    HSData = connect_hs_data(Kernel, Node, MyNode, Socket, 
 						     Timer, Version, Ip, TcpPort, Address,
-						     Type),
+						     Type, Driver:family()),
 			    dist_util:handshake_we_started(HSData);
 			Other ->
 			    %% Other Node may have closed since 
@@ -224,7 +224,7 @@ split_node([H|T], Chr, Ack) ->
 split_node([], _, Ack) -> 
     [lists:reverse(Ack)].
 
-connect_hs_data(Kernel, Node, MyNode, Socket, Timer, Version, Ip, TcpPort, Address, Type) ->
+connect_hs_data(Kernel, Node, MyNode, Socket, Timer, Version, Ip, TcpPort, Address, Type, AddressFamily) ->
     common_hs_data(Kernel, MyNode, Socket, Timer, 
 		   #hs_data{other_node = Node,
 			    other_version = Version,
@@ -233,7 +233,7 @@ connect_hs_data(Kernel, Node, MyNode, Socket, Timer, Version, Ip, TcpPort, Addre
 					#net_address{address = {Ip,TcpPort},
 						     host = Address,
 						     protocol = proxy,
-						     family = inet}
+						     family = AddressFamily}
 				end,
 			    request_type = Type
 			   }).
