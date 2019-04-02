@@ -111,22 +111,29 @@ init([]) ->
 
 handle_call({listen, Driver, Name}, _From, State) ->
     case gen_tcp:listen(0, [{active, false}, {packet,?PPRE}, {ip, loopback}]) of
-	{ok, Socket} ->
-	    {ok, World} = do_listen([{active, false}, binary, {packet,?PPRE}, {reuseaddr, true},
-                                     Driver:family()]),
-	    {ok, TcpAddress} = get_tcp_address(Socket),
-	    {ok, WorldTcpAddress} = get_tcp_address(World),
-	    {_,Port} = WorldTcpAddress#net_address.address,
-	    ErlEpmd = net_kernel:epmd_module(),
-	    case ErlEpmd:register_node(Name, Port, Driver) of
-		{ok, Creation} ->
-		    {reply, {ok, {Socket, TcpAddress, Creation}},
-		     State#state{listen={Socket, World}}};
-		{error, _} = Error ->
-		    {reply, Error, State}
-	    end;
-	Error ->
-	    {reply, Error, State}
+        {ok, Socket} ->
+            case do_listen([{active, false}, binary, {packet,?PPRE},
+                            {reuseaddr, true}, Driver:family()]) of
+                {ok, World} ->
+                    {ok, TcpAddress} = get_tcp_address(Socket),
+                    {ok, WorldTcpAddress} = get_tcp_address(World),
+                    {_,Port} = WorldTcpAddress#net_address.address,
+                    ErlEpmd = net_kernel:epmd_module(),
+                    case ErlEpmd:register_node(Name, Port, Driver) of
+                        {ok, Creation} ->
+                            {reply, {ok, {Socket, TcpAddress, Creation}},
+                             State#state{listen={Socket, World}}};
+                        {error, _} = Error ->
+                            catch gen_tcp:close(World),
+                            catch gen_tcp:close(Socket),
+                            {reply, Error, State}
+                    end;
+                {error, _} = Error ->
+                    catch gen_tcp:close(Socket),
+                    {reply, Error, State}
+            end;
+        Error ->
+            {reply, Error, State}
     end;
 
 handle_call({accept, _Driver, Listen}, {From, _}, State = #state{listen={_, World}}) ->
