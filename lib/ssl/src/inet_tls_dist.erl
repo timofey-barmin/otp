@@ -96,7 +96,7 @@ do_setup(Driver, Kernel, Node, Type, MyNode, LongOrShortNames, SetupTime) ->
 		    case
                         ssl_tls_dist_proxy:connect(
                           Driver, Address, TcpPort,
-                          [{server_name_indication, atom_to_list(Node)}])
+                          [{server_name_indication, Address}])
                     of
 			{ok, Socket} ->
 			    HSData = connect_hs_data(Kernel, Node, MyNode, Socket, 
