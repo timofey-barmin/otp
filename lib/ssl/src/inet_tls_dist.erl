@@ -93,10 +93,14 @@ do_setup(Driver, Kernel, Node, Type, MyNode, LongOrShortNames, SetupTime) ->
 		    ?trace("port_please(~p) -> version ~p~n", 
 			   [Node,Version]),
 		    dist_util:reset_timer(Timer),
+            IsHostname = case inet:parse_address(Address) of
+                             {ok, _} -> false;
+                             _ -> true
+                         end,
 		    case
                         ssl_tls_dist_proxy:connect(
-                          Driver, Address, TcpPort,
-                          [{server_name_indication, Address}])
+                          Driver, Ip, TcpPort,
+                          [{server_name_indication, Address} || IsHostname])
                     of
 			{ok, Socket} ->
 			    HSData = connect_hs_data(Kernel, Node, MyNode, Socket, 
